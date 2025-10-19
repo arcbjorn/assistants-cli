@@ -1,6 +1,6 @@
 {
-  "name": "assistants-sync",
-  "module": "index.ts",
+  "name": "assistants-cli",
+  "module": "cli.ts",
   "type": "module",
   "private": true,
   "devDependencies": {
