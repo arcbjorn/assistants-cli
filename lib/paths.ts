@@ -62,7 +62,7 @@ export function globalPaths() {
     claude: { root: join(home, '.claude'), commands: join(home, '.claude', 'commands'), agents: join(home, '.claude', 'agents'), files: { CLAUDE: join(home, '.claude', 'CLAUDE.md'), settings: join(home, '.claude', 'settings.json') } },
     codex:  { root: join(home, '.codex'), prompts: join(home, '.codex', 'prompts'), files: { AGENTS: join(home, '.codex', 'AGENTS.md'), config: join(home, '.codex', 'config.toml') } },
     gemini: { root: join(home, '.gemini'), commands: join(home, '.gemini', 'commands'), files: { GEMINI: join(home, '.gemini', 'GEMINI.md'), settings: join(home, '.gemini', 'settings.json') } },
-    opencode: { root: join(home, '.config', 'opencode'), commands: join(home, '.config', 'opencode', 'command'), agents: join(home, '.config', 'opencode', 'agent'), files: { confJsonc: join(home, '.config', 'opencode', 'opencode.jsonc'), confJsonrc: join(home, '.config', 'opencode', 'opencode.jsonrc'), global: join(home, '.config', 'opencode', 'global_instructions.md') } },
+    opencode: { root: join(home, '.config', 'opencode'), commands: join(home, '.config', 'opencode', 'command'), agents: join(home, '.config', 'opencode', 'agent'), files: { confJsonc: join(home, '.config', 'opencode', 'opencode.jsonc'), global: join(home, '.config', 'opencode', 'global_instructions.md') } },
   }
 }
 

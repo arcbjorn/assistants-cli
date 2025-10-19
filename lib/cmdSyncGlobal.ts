@@ -74,14 +74,12 @@ export async function runSyncGlobal(rootArg?: string, dryRun = false) {
       await ensureDir(gp.opencode.commands); await ensureDir(gp.opencode.agents)
       await syncDir(join(oSrc, 'commands'), gp.opencode.commands)
       await syncDir(join(oSrc, 'agent'), gp.opencode.agents)
-      // Merge into whichever global file exists (json/jsonc/jsonrc), prefer jsonc
+      // Merge opencode.jsonc configuration
       const localJsonc = join(oSrc, 'opencode.jsonc')
-      const localJsonrc = join(oSrc, 'opencode.jsonrc')
       const destJson = join(gp.opencode.root, 'opencode.json')
       const destJsonc = gp.opencode.files.confJsonc
-      const destJsonrc = gp.opencode.files.confJsonrc
       const dest = (await exists(destJsonc)) ? destJsonc : (await exists(destJson)) ? destJson : destJsonc
-      const localPath = (await exists(localJsonc)) ? localJsonc : (await exists(localJsonrc)) ? localJsonrc : ''
+      const localPath = (await exists(localJsonc)) ? localJsonc : ''
       if (localPath) {
         const existing = await readJsonc(dest)
         const merged = mergeOpenCodeConfig(existing)

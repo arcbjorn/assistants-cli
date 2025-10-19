@@ -99,7 +99,6 @@ async function emitOpenCode(root: string, commands: any[], agents: any[], global
     await writeFile(join(outDir, 'global_instructions.md'), globalMd)
     const cfg = { $schema: 'https://opencode.ai/config.json', instructions: ['./global_instructions.md'] }
     await writeFile(join(outDir, 'opencode.jsonc'), JSON.stringify(cfg, null, 2) + '\n')
-    await writeFile(join(outDir, 'opencode.jsonrc'), JSON.stringify(cfg, null, 2) + '\n')
   }
 }
 
