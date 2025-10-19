@@ -1,10 +1,18 @@
 import { promises as fs } from "fs";
 import { join, sep } from "path";
 import { tmpdir } from "os";
-import { mkdtemp } from "fs/promises";
+import { mkdtemp, rm } from "fs/promises";
 
 export async function mkTempAssistantsRoot(prefix = "assistants-") {
   return await mkdtemp(`${tmpdir()}${sep}${prefix}`);
+}
+
+export async function cleanupTempDir(dir: string) {
+  try {
+    await rm(dir, { recursive: true, force: true });
+  } catch {
+    // Ignore cleanup errors
+  }
 }
 
 export async function mkdirp(p: string) {
