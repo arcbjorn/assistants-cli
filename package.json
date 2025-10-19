@@ -1,0 +1,19 @@
+{
+  "name": "assistants-sync",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "scripts": {
+    "gen": "bun run index.ts gen",
+    "gen:all": "bun run index.ts gen all",
+    "build:bin": "bun build --compile index.ts --outfile dist/assistants-sync",
+    "update:docs": "bun run update-agent.ts",
+    "test": "bun test"
+  }
+}
