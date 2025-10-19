@@ -92,7 +92,16 @@ async function emitOpenCode(root: string, commands: any[], agents: any[], global
     await writeFile(join(cmdDir, `${c.slug}.md`), withFrontMatter(fm, body))
   }
   for (const a of agents) {
-    const content = `# ${a.name}\n\n${a.system}`
+    const fm: Record<string, unknown> = {}
+    // Extract description from system prompt - first non-empty line
+    if (a.system) {
+      const systemLines = a.system.split('\n').map(line => line.trim()).filter(line => line)
+      if (systemLines.length > 0) {
+        fm.description = systemLines[0].length > 100 ? systemLines[0].substring(0, 97) + '...' : systemLines[0]
+      }
+    }
+    fm.mode = 'primary'
+    const content = withFrontMatter(fm, a.system)
     await writeFile(join(agentDir, `${a.slug}.md`), content)
   }
   if (globalMd) {
@@ -113,7 +122,16 @@ async function emitClaude(root: string, commands: any[], agents: any[], globalMd
     await writeFile(join(cmdDir, `${c.slug}.md`), content)
   }
   for (const a of agents) {
-    const content = `# ${a.name}\n\n${a.system}`
+    const fm: Record<string, unknown> = {}
+    fm.name = a.name
+    if (a.system) {
+      // Extract description from system prompt - first non-empty line
+      const systemLines = a.system.split('\n').map(line => line.trim()).filter(line => line)
+      if (systemLines.length > 0) {
+        fm.description = systemLines[0].length > 100 ? systemLines[0].substring(0, 97) + '...' : systemLines[0]
+      }
+    }
+    const content = withFrontMatter(fm, a.system)
     await writeFile(join(agentDir, `${a.slug}.md`), content)
   }
   if (globalMd) await writeFile(join(outDir, 'CLAUDE.md'), globalMd)
