@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs'
 import { join, resolve } from 'path'
 
-export function assistantRootDefault(_fromCwd: string): string {
+export function assistantRootDefault(fromCwd: string): string {
   const home = process.env.HOME || process.env.USERPROFILE || ''
   return resolve(home, 'tools', 'assistants')
 }
