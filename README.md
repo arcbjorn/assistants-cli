@@ -16,7 +16,7 @@ Source of truth (inside assistants/)
 Outputs
 - Codex: `codex/prompts/*.md`, `codex/AGENTS.md`, `codex/config.toml`
 - Gemini: `gemini/commands/*.toml`, `gemini/GEMINI.md`, `gemini/settings.json`
-- OpenCode: `opencode/agent/*.md`, `opencode/commands/*.md`, `opencode/global_instructions.md`, `opencode.jsonc/jsonrc`
+- OpenCode: `opencode/agent/*.md`, `opencode/commands/*.md`, `opencode/global_instructions.md`, `opencode.jsonc`
 - Claude: `claude/agents/*.md`, `claude/commands/*.md`, `claude/CLAUDE.md`, `claude/settings.json`
 
 Validation prompt

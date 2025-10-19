@@ -67,7 +67,7 @@ Use the official docs below to verify that assistants/source has been correctly 
     - Append $ARGUMENTS if missing
   - Agents: assistants/opencode/agent/<slug>.md (Markdown)
   - Global: assistants/opencode/global_instructions.md (verbatim)
-  - Config: assistants/opencode/opencode.jsonc (or .jsonrc)
+  - Config: assistants/opencode/opencode.jsonc
     {
       "$schema": "https://opencode.ai/config.json",
       "instructions": ["./global_instructions.md"]
