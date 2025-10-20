@@ -69,10 +69,5 @@ export async function mergeCodexToml(destPath: string, localPath: string) {
     const ap = (local.match(/^approval_policy\s*=.*$/m) || ['approval_policy = "on-request"'])[0]
     dest = appendTomlIfMissing(dest, ap, () => hasTomlKey(dest, 'approval_policy'))
   }
-  if (!hasTomlSection(dest, 'model_providers.openai')) {
-    const sect = local.match(/^\[model_providers\.openai[^\]]*\][\s\S]*?(?=\n\[|$)/m)?.[0]
-      || ['[model_providers.openai]','name = "OpenAI"','base_url = "https://api.openai.com/v1"','env_key = "OPENAI_API_KEY"'].join('\n')
-    dest = appendTomlIfMissing(dest, sect, () => hasTomlSection(dest, 'model_providers.openai'))
-  }
   await fs.writeFile(destPath, dest)
 }

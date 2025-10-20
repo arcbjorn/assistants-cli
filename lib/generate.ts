@@ -169,14 +169,6 @@ function defaultCodexConfig(): string {
     '',
     '# Uncomment to use profiles',
     '# profile = "o3"',
-    '',
-    '[model_providers.openai]',
-    'name = "OpenAI"',
-    'base_url = "https://api.openai.com/v1"',
-    'env_key = "OPENAI_API_KEY"',
-    '# request_max_retries = 4',
-    '# stream_max_retries = 5',
-    '# stream_idle_timeout_ms = 300000',
     ''
   ].join('\n') + '\n'
 }
