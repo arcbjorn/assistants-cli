@@ -11,4 +11,3 @@ export async function runGen(target: Target | 'all', rootArg?: string) {
   await generateAll(targets, root)
   console.log(`Generated for: ${targets.join(', ')} at ${root}`)
 }
-
