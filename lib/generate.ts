@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs'
-import { basename, extname, join, resolve } from 'path'
-import { ensureDir, writeFile, copyDir } from './fsutil'
+import { basename, extname, join } from 'path'
+import { ensureDir, writeFile, copyDir, copyFile } from './fsutil'
 import { withFrontMatter } from './format'
 
 export type Target = 'codex' | 'claude' | 'gemini' | 'opencode'
@@ -28,14 +28,42 @@ async function readCommands(srcDir: string) {
 async function readAgents(srcDir: string) {
   const dir = join(srcDir, 'agents')
   const files = await mdFilesOf(dir)
-  const out: { slug: string; name: string; system: string }[] = []
+  const out: { slug: string; name: string; system: string; description?: string; explicitName?: boolean }[] = []
   for (const f of files) {
     const raw = await fs.readFile(f, 'utf8')
     const slug = basename(f, extname(f))
-    const title = raw.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? slug
-    const bodyStartIdx = raw.match(/^#\s+(.+)$/m) ? (raw.indexOf(raw.match(/^#\s+(.+)$/m)![0]) + raw.match(/^#\s+(.+)$/m)![0].length) : 0
-    const system = raw.slice(bodyStartIdx).replace(/^\s+/, '')
-    out.push({ slug, name: title, system })
+
+    let system = raw
+    let name = slug
+    let description: string | undefined
+    let explicitName = false
+
+    // Handle YAML frontmatter
+    if (raw.startsWith('---')) {
+      const frontmatterEnd = raw.indexOf('---', 3)
+      if (frontmatterEnd !== -1) {
+        const frontmatterStr = raw.slice(3, frontmatterEnd).trim()
+        system = raw.slice(frontmatterEnd + 3).replace(/^\s+/, '')
+
+        const nameMatch = frontmatterStr.match(/^name:\s*(.+)$/m)
+        if (nameMatch) {
+          name = nameMatch[1].replace(/^["']|["']$/g, '')
+          explicitName = true
+        }
+        const descMatch = frontmatterStr.match(/^description:\s*(.+)$/m)
+        if (descMatch) description = descMatch[1].replace(/^["']|["']$/g, '')
+      }
+    } else {
+      // Handle markdown title
+      const titleMatch = raw.match(/^#\s+(.+)$/m)
+      if (titleMatch) {
+        name = titleMatch[1].trim()
+        const titleIdx = raw.indexOf(titleMatch[0])
+        system = raw.slice(titleIdx + titleMatch[0].length).replace(/^\s+/, '')
+      }
+    }
+
+    out.push({ slug, name, system, description, explicitName })
   }
   return out
 }
@@ -91,15 +119,21 @@ async function emitOpenCode(root: string, commands: any[], agents: any[], global
     const fm = { description: cleanDesc }
     await writeFile(join(cmdDir, `${c.slug}.md`), withFrontMatter(fm, body))
   }
+  function randName(len = 8): string {
+    const letters = 'abcdefghijklmnopqrstuvwxyz'
+    let out = ''
+    for (let i = 0; i < len; i++) out += letters[Math.floor(Math.random() * letters.length)]
+    return out
+  }
+
   for (const a of agents) {
     const fm: Record<string, unknown> = {}
-    // Extract description from system prompt - first non-empty line
-    if (a.system) {
-      const systemLines = a.system.split('\n').map(line => line.trim()).filter(line => line)
-      if (systemLines.length > 0) {
-        fm.description = systemLines[0].length > 100 ? systemLines[0].substring(0, 97) + '...' : systemLines[0]
-      }
-    }
+    // name: explicit frontmatter stays; else random 8 letters
+    fm.name = (a.explicitName ? a.name : randName(8))
+    // description: prefer frontmatter, else title (a.name)
+    const desc = (a.description ?? a.name) as string
+    fm.description = desc.length > 100 ? desc.substring(0, 97) + '...' : desc
+
     fm.mode = 'primary'
     const content = withFrontMatter(fm, a.system)
     await writeFile(join(agentDir, `${a.slug}.md`), content)
@@ -111,7 +145,7 @@ async function emitOpenCode(root: string, commands: any[], agents: any[], global
   }
 }
 
-async function emitClaude(root: string, commands: any[], agents: any[], globalMd: string | null) {
+async function emitClaude(root: string, commands: any[], agents: any[], globalMd: string | null, sourceDir: string) {
   const outDir = join(root, 'claude')
   const cmdDir = join(outDir, 'commands')
   const agentDir = join(outDir, 'agents')
@@ -122,17 +156,8 @@ async function emitClaude(root: string, commands: any[], agents: any[], globalMd
     await writeFile(join(cmdDir, `${c.slug}.md`), content)
   }
   for (const a of agents) {
-    const fm: Record<string, unknown> = {}
-    fm.name = a.name
-    if (a.system) {
-      // Extract description from system prompt - first non-empty line
-      const systemLines = a.system.split('\n').map(line => line.trim()).filter(line => line)
-      if (systemLines.length > 0) {
-        fm.description = systemLines[0].length > 100 ? systemLines[0].substring(0, 97) + '...' : systemLines[0]
-      }
-    }
-    const content = withFrontMatter(fm, a.system)
-    await writeFile(join(agentDir, `${a.slug}.md`), content)
+    const agentFile = join(sourceDir, 'agents', `${a.slug}.md`)
+    await copyFile(agentFile, join(agentDir, `${a.slug}.md`))
   }
   if (globalMd) await writeFile(join(outDir, 'CLAUDE.md'), globalMd)
 }
@@ -193,8 +218,7 @@ export async function generateAll(targets: Target[], assistantsDir: string) {
     if (t === 'codex') await emitCodex(assistantsDir, commands, globalMd)
     else if (t === 'gemini') await emitGemini(assistantsDir, commands, globalMd)
     else if (t === 'opencode') await emitOpenCode(assistantsDir, commands, agents, globalMd)
-    else if (t === 'claude') await emitClaude(assistantsDir, commands, agents, globalMd)
+    else if (t === 'claude') await emitClaude(assistantsDir, commands, agents, globalMd, sourceDir)
     await emitConfigs(assistantsDir, sourceDir, t)
   }
 }
-
