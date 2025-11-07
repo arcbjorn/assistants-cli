@@ -15,24 +15,39 @@ async function readExistingFile(path: string): Promise<string | null> {
 
 function mergeWithGlobal(globalMd: string | null, existingContent: string | null): string {
   if (!globalMd) return existingContent || ''
-  if (!existingContent) return globalMd
 
-  // Check if the existing content already contains the exact global instructions
-  const normalizedGlobal = globalMd.trim()
-  const normalizedExisting = existingContent.trim()
+  const startMarker = '<!-- GLOBAL INSTRUCTIONS START -->'
+  const endMarker = '<!-- GLOBAL INSTRUCTIONS END -->'
 
-  // If the file starts with the exact global instructions, don't duplicate
-  if (normalizedExisting.startsWith(normalizedGlobal)) {
-    return existingContent
+  // Wrap global instructions with markers
+  const wrappedGlobal = `${startMarker}\n${globalMd.trim()}\n${endMarker}`
+
+  if (!existingContent) {
+    return wrappedGlobal
   }
 
-  // If global instructions exist somewhere in the file (exact match), don't duplicate
-  if (normalizedExisting.includes(normalizedGlobal)) {
-    return existingContent
+  // Check if markers exist in the content
+  const startIdx = existingContent.indexOf(startMarker)
+  const endIdx = existingContent.indexOf(endMarker)
+
+  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+    // Replace existing global instructions section
+    const beforeGlobal = existingContent.substring(0, startIdx)
+    const afterGlobal = existingContent.substring(endIdx + endMarker.length)
+
+    // Clean up extra newlines
+    const prefix = beforeGlobal.trim() ? beforeGlobal.trim() + '\n\n' : ''
+    const suffix = afterGlobal.trim() ? '\n\n' + afterGlobal.trim() : ''
+
+    return prefix + wrappedGlobal + suffix
   }
 
-  // Prepend global instructions with a separator
-  return globalMd.trim() + '\n\n' + existingContent.trim() + '\n'
+  // No markers found, prepend global instructions with markers
+  const assistantContent = existingContent.trim()
+  if (assistantContent) {
+    return wrappedGlobal + '\n\n' + assistantContent
+  }
+  return wrappedGlobal
 }
 
 function mdFilesOf(dir: string): Promise<string[]> {
