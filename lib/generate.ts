@@ -5,6 +5,36 @@ import { withFrontMatter } from './format'
 
 export type Target = 'codex' | 'claude' | 'gemini' | 'opencode'
 
+async function readExistingFile(path: string): Promise<string | null> {
+  try {
+    return await fs.readFile(path, 'utf8')
+  } catch {
+    return null
+  }
+}
+
+function mergeWithGlobal(globalMd: string | null, existingContent: string | null): string {
+  if (!globalMd) return existingContent || ''
+  if (!existingContent) return globalMd
+
+  // Check if the existing content already contains the exact global instructions
+  const normalizedGlobal = globalMd.trim()
+  const normalizedExisting = existingContent.trim()
+
+  // If the file starts with the exact global instructions, don't duplicate
+  if (normalizedExisting.startsWith(normalizedGlobal)) {
+    return existingContent
+  }
+
+  // If global instructions exist somewhere in the file (exact match), don't duplicate
+  if (normalizedExisting.includes(normalizedGlobal)) {
+    return existingContent
+  }
+
+  // Prepend global instructions with a separator
+  return globalMd.trim() + '\n\n' + existingContent.trim() + '\n'
+}
+
 function mdFilesOf(dir: string): Promise<string[]> {
   return fs.readdir(dir).then((list) => list.filter((f) => f.endsWith('.md')).map((f) => join(dir, f))).catch(() => [])
 }
@@ -87,7 +117,12 @@ async function emitCodex(root: string, commands: any[], globalMd: string | null)
     const content = withFrontMatter(fm, c.body)
     await writeFile(join(prompts, `${c.slug}.md`), content)
   }
-  if (globalMd) await writeFile(join(outDir, 'AGENTS.md'), globalMd)
+  if (globalMd) {
+    const agentsPath = join(outDir, 'AGENTS.md')
+    const existing = await readExistingFile(agentsPath)
+    const merged = mergeWithGlobal(globalMd, existing)
+    await writeFile(agentsPath, merged)
+  }
 }
 
 async function emitGemini(root: string, commands: any[], globalMd: string | null) {
@@ -103,7 +138,12 @@ async function emitGemini(root: string, commands: any[], globalMd: string | null
     lines.push('"""')
     await writeFile(join(cmdDir, `${c.slug}.toml`), lines.join('\n') + '\n')
   }
-  if (globalMd) await writeFile(join(outDir, 'GEMINI.md'), globalMd)
+  if (globalMd) {
+    const geminiPath = join(outDir, 'GEMINI.md')
+    const existing = await readExistingFile(geminiPath)
+    const merged = mergeWithGlobal(globalMd, existing)
+    await writeFile(geminiPath, merged)
+  }
 }
 
 async function emitOpenCode(root: string, commands: any[], agents: any[], globalMd: string | null) {
@@ -139,7 +179,10 @@ async function emitOpenCode(root: string, commands: any[], agents: any[], global
     await writeFile(join(agentDir, `${a.slug}.md`), content)
   }
   if (globalMd) {
-    await writeFile(join(outDir, 'global_instructions.md'), globalMd)
+    const globalPath = join(outDir, 'global_instructions.md')
+    const existing = await readExistingFile(globalPath)
+    const merged = mergeWithGlobal(globalMd, existing)
+    await writeFile(globalPath, merged)
     const cfg = { $schema: 'https://opencode.ai/config.json', instructions: ['./global_instructions.md'] }
     await writeFile(join(outDir, 'opencode.jsonc'), JSON.stringify(cfg, null, 2) + '\n')
   }
@@ -159,7 +202,12 @@ async function emitClaude(root: string, commands: any[], agents: any[], globalMd
     const agentFile = join(sourceDir, 'agents', `${a.slug}.md`)
     await copyFile(agentFile, join(agentDir, `${a.slug}.md`))
   }
-  if (globalMd) await writeFile(join(outDir, 'CLAUDE.md'), globalMd)
+  if (globalMd) {
+    const claudePath = join(outDir, 'CLAUDE.md')
+    const existing = await readExistingFile(claudePath)
+    const merged = mergeWithGlobal(globalMd, existing)
+    await writeFile(claudePath, merged)
+  }
 }
 
 function defaultCodexConfig(): string {
